@@ -1,0 +1,18 @@
+# Binary files (can be downloaded/built)
+*.bin
+*.img
+*.img.gz
+
+# Build artifacts
+result
+result-*
+.nixos-build/
+
+# Temporary files
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Log files
+*.log
