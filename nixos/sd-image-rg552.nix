@@ -59,6 +59,11 @@ EOF
         echo "Run: ./get-bootloader.sh --download --output nixos/u-boot-rockchip.bin"
         exit 1
       fi
+
+      # TODO: Fix boot flag on partition 1 (firmware) instead of partition 2 (root)
+      # This improves U-Boot scan priority and reduces USB crash race condition.
+      # Currently requires manual fix: echo -e 'a\n1\na\n2\nw' | fdisk $img
+      # Should integrate into build process using sfdisk or parted for automation.
     '';
   };
 
@@ -71,6 +76,7 @@ EOF
       "console=tty1"
       "console=ttyS2,1500000n8"  # Serial console
       "rootwait"
+      "loglevel=7"  # Verbose kernel messages for debugging
     ];
 
     # Use extlinux boot
