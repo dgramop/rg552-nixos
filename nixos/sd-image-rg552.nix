@@ -73,10 +73,11 @@ EOF
 
     # Kernel parameters
     kernelParams = [
+      "earlycon"  # Early console (auto-detects from DT stdout-path = serial2:1500000n8)
       "console=tty1"
-      "console=ttyS2,1500000n8"  # Serial console
+      "console=ttyS2,1500000n8"  # Serial console (UART2 at 0xff1a0000)
       "rootwait"
-      "loglevel=7"  # Verbose kernel messages for debugging
+      "loglevel=7"  # Verbose kernel messages for debugging (overridden by loglevel=4 from NixOS defaults)
     ];
 
     # Use extlinux boot
