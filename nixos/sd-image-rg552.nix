@@ -48,7 +48,7 @@ LABEL NixOS
   LINUX /KERNEL
   INITRD /initrd
   FDT /device_trees/rk3399-anbernic-rg552.dtb
-  APPEND ${toString config.boot.kernelParams}
+  APPEND init=${config.system.build.toplevel}/init ${toString config.boot.kernelParams}
 EOF
     '';
 
@@ -77,18 +77,22 @@ EOF
 
     # Kernel parameters
     kernelParams = [
-      "earlycon"  # Early console (auto-detects from DT stdout-path = serial2:1500000n8)
+      "earlycon=uart8250,mmio32,0xff1a0000,115200n8"  # Early console at 115200 baud (ROCKNIX uses this)
       "console=tty1"
-      "console=ttyS2,1500000n8"  # Serial console (UART2 at 0xff1a0000)
+      "console=ttyS2,115200n8"  # Serial console at 115200 baud (matching ROCKNIX, not U-Boot's 1.5Mbaud)
       "rootwait"
-      # Note: NixOS adds loglevel=4 by default via generic-extlinux-compatible
+      "loglevel=7"  # Verbose logging
     ];
 
-    # Use extlinux boot
+    # Use extlinux boot (but we handle conf generation ourselves)
     loader = {
       grub.enable = false;
-      generic-extlinux-compatible.enable = true;
+      generic-extlinux-compatible.enable = false;  # We generate extlinux.conf manually
     };
+
+    # Explicitly set kernel and initrd filenames for our manual extlinux.conf
+    loader.kernelFile = lib.mkDefault "Image";
+    loader.initrdFile = lib.mkDefault "initrd";
 
     # Initial ramdisk
     initrd = {
