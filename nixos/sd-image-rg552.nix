@@ -34,6 +34,9 @@
       # Copy kernel
       cp ${config.system.build.kernel}/${config.system.boot.loader.kernelFile} firmware/KERNEL
 
+      # Copy initrd
+      cp ${config.system.build.initialRamdisk}/${config.system.boot.loader.initrdFile} firmware/initrd
+
       # Copy device tree
       mkdir -p firmware/device_trees
       cp ${../rk3399-anbernic-rg552.dtb} firmware/device_trees/rk3399-anbernic-rg552.dtb
@@ -43,6 +46,7 @@
       cat > firmware/extlinux/extlinux.conf <<EOF
 LABEL NixOS
   LINUX /KERNEL
+  INITRD /initrd
   FDT /device_trees/rk3399-anbernic-rg552.dtb
   APPEND ${toString config.boot.kernelParams}
 EOF
