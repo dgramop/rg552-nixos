@@ -64,10 +64,10 @@ EOF
         exit 1
       fi
 
-      # TODO: Fix boot flag on partition 1 (firmware) instead of partition 2 (root)
-      # This improves U-Boot scan priority and reduces USB crash race condition.
-      # Currently requires manual fix: echo -e 'a\n1\na\n2\nw' | fdisk $img
-      # Should integrate into build process using sfdisk or parted for automation.
+      # Fix boot flag on partition 1 (firmware), unset on partition 2 (root)
+      # This improves U-Boot scan priority and reduces USB crash race condition
+      echo "Fixing boot flags..."
+      printf 'a\n1\na\n2\nw\n' | ${pkgs.util-linux}/bin/fdisk $img > /dev/null 2>&1
     '';
   };
 
@@ -81,7 +81,7 @@ EOF
       "console=tty1"
       "console=ttyS2,1500000n8"  # Serial console (UART2 at 0xff1a0000)
       "rootwait"
-      "loglevel=7"  # Verbose kernel messages for debugging (overridden by loglevel=4 from NixOS defaults)
+      # Note: NixOS adds loglevel=4 by default via generic-extlinux-compatible
     ];
 
     # Use extlinux boot
