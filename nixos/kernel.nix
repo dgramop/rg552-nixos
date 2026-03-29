@@ -9,6 +9,17 @@
       version = pkgs.linux_latest.version;
       modDirVersion = pkgs.linux_latest.modDirVersion;
 
+      # Kernel config overrides for serial console debugging
+      structuredExtraConfig = with lib.kernel; {
+        # Enable early console support
+        SERIAL_EARLYCON = yes;
+        SERIAL_8250_CONSOLE = yes;
+        SERIAL_OF_PLATFORM = yes;
+        # Enable all console output
+        PRINTK = yes;
+        EARLY_PRINTK = yes;
+      };
+
       # Apply ROCKNIX patches for RG552 hardware support
       kernelPatches = (pkgs.linux_latest.kernelPatches or []) ++ [
         # Device tree and base RG552 support
