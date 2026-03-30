@@ -9,8 +9,8 @@
 
 setenv ramdisk_addr_r 0x10000000
 
-# Initialize MMC device
-mmc dev 0
+# Initialize MMC device and select partition 1
+mmc dev 0 1
 
 # Manually load kernel, initrd, and device tree
 echo "Loading kernel from /Image..."
