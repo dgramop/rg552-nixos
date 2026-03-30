@@ -9,9 +9,11 @@
 
 setenv ramdisk_addr_r 0x10000000
 
-# Initialize SD card (device 1) and select partition 1
+# Initialize SD card (device 1)
 # Device 0 is eMMC, device 1 is SD card
-mmc dev 1 1
+# Note: Cannot use "mmc dev 1 1" - partition selection doesn't work
+# Partition is specified in load commands as "mmc 1:1"
+mmc dev 1
 
 # Manually load kernel, initrd, and device tree from SD card
 echo "Loading kernel from /Image..."
