@@ -31,8 +31,9 @@
 
     # Populate firmware partition with boot files
     populateFirmwareCommands = ''
-      # Copy kernel
-      cp ${config.system.build.kernel}/Image firmware/KERNEL
+      # Copy and compress kernel to avoid memory overlap issues
+      # The uncompressed Image is ~62MB which overlaps with initrd load address
+      ${pkgs.gzip}/bin/gzip -c ${config.system.build.kernel}/Image > firmware/KERNEL.gz
 
       # Copy initrd
       cp ${config.system.build.initialRamdisk}/initrd firmware/initrd
@@ -42,10 +43,11 @@
       cp ${../rk3399-anbernic-rg552.dtb} firmware/device_trees/rk3399-anbernic-rg552.dtb
 
       # Create extlinux boot configuration
+      # Note: Using .gz compressed kernel to reduce memory footprint
       mkdir -p firmware/extlinux
       cat > firmware/extlinux/extlinux.conf <<EOF
 LABEL NixOS
-  LINUX /KERNEL
+  LINUX /KERNEL.gz
   INITRD /initrd
   FDT /device_trees/rk3399-anbernic-rg552.dtb
   APPEND init=${config.system.build.toplevel}/init ${toString config.boot.kernelParams}
