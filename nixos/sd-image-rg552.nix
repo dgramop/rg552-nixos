@@ -32,10 +32,10 @@
     # Populate firmware partition with boot files
     populateFirmwareCommands = ''
       # Copy kernel
-      cp ${config.system.build.kernel}/${config.system.boot.loader.kernelFile} firmware/KERNEL
+      cp ${config.system.build.kernel}/Image firmware/KERNEL
 
       # Copy initrd
-      cp ${config.system.build.initialRamdisk}/${config.system.boot.loader.initrdFile} firmware/initrd
+      cp ${config.system.build.initialRamdisk}/initrd firmware/initrd
 
       # Copy device tree
       mkdir -p firmware/device_trees
@@ -67,7 +67,29 @@ EOF
       # Fix boot flag on partition 1 (firmware), unset on partition 2 (root)
       # This improves U-Boot scan priority and reduces USB crash race condition
       echo "Fixing boot flags..."
-      printf 'a\n1\na\n2\nw\n' | ${pkgs.util-linux}/bin/fdisk $img > /dev/null 2>&1
+      echo "Before fdisk:"
+      ${pkgs.util-linux}/bin/fdisk -l $img | grep "^$img"
+
+      # Toggle boot flags: enable on partition 1, disable on partition 2
+      printf 'a\n1\na\n2\nw\n' | ${pkgs.util-linux}/bin/fdisk $img 2>&1 | grep -E "(bootable|partition table|Writing)" || true
+
+      echo "After fdisk:"
+      ${pkgs.util-linux}/bin/fdisk -l $img | grep "^$img"
+
+      # Verify that partition 1 has boot flag and partition 2 doesn't
+      if ${pkgs.util-linux}/bin/fdisk -l $img | grep "^''${img}1" | grep -q '\*'; then
+        echo "✓ Boot flag correctly set on partition 1 (firmware)"
+      else
+        echo "✗ ERROR: Boot flag NOT set on partition 1 (firmware)"
+        exit 1
+      fi
+
+      if ! ${pkgs.util-linux}/bin/fdisk -l $img | grep "^''${img}2" | grep -q '\*'; then
+        echo "✓ Boot flag correctly unset on partition 2 (root)"
+      else
+        echo "✗ ERROR: Boot flag incorrectly set on partition 2 (root)"
+        exit 1
+      fi
     '';
   };
 
@@ -77,22 +99,27 @@ EOF
 
     # Kernel parameters
     kernelParams = [
-      "earlycon=uart8250,mmio32,0xff1a0000,115200n8"  # Early console at 115200 baud (ROCKNIX uses this)
+      "earlycon=uart8250,mmio32,0xff1a0000,1500000n8"  # Early console at 1.5Mbaud (matching U-Boot and Android)
       "console=tty1"
-      "console=ttyS2,115200n8"  # Serial console at 115200 baud (matching ROCKNIX, not U-Boot's 1.5Mbaud)
+      "console=ttyS2,1500000n8"  # Serial console at 1.5Mbaud (same as U-Boot, no baud rate change needed!)
       "rootwait"
       "loglevel=7"  # Verbose logging
+      "systemd.log_level=debug"  # Debug logging for systemd in initrd
+      "systemd.log_target=console"  # Send systemd logs to console
+      "rd.debug"  # Enable initramfs debugging
     ];
+
+    # Enable systemd in initrd with debug shell
+    initrd.systemd = {
+      enable = true;
+      emergencyAccess = true;  # Allow emergency shell access
+    };
 
     # Use extlinux boot (but we handle conf generation ourselves)
     loader = {
       grub.enable = false;
       generic-extlinux-compatible.enable = false;  # We generate extlinux.conf manually
     };
-
-    # Explicitly set kernel and initrd filenames for our manual extlinux.conf
-    loader.kernelFile = lib.mkDefault "Image";
-    loader.initrdFile = lib.mkDefault "initrd";
 
     # Initial ramdisk
     initrd = {

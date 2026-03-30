@@ -17,7 +17,7 @@
         SERIAL_OF_PLATFORM = yes;
         # Enable all console output
         PRINTK = yes;
-        EARLY_PRINTK = yes;
+        # Note: EARLY_PRINTK was removed in newer kernels, using SERIAL_EARLYCON instead
       };
 
       # Apply ROCKNIX patches for RG552 hardware support
