@@ -30,6 +30,16 @@ load mmc 1:1 ${fdt_addr_r} /device_trees/rk3399-anbernic-rg552.dtb
 # Note: @INIT@ will be replaced with full kernel parameters by sed substitution
 setenv bootargs "@INIT@"
 
-# Boot the kernel
-echo "Booting NixOS kernel..."
-booti ${kernel_addr_r} ${ramdisk_addr_r}:${ramdisk_size} ${fdt_addr_r}
+# Print bootargs for inspection
+echo "==================================="
+echo "Boot script setup complete!"
+echo "==================================="
+echo ""
+echo "Bootargs set to:"
+printenv bootargs
+echo ""
+echo "To boot manually, run:"
+echo "  booti \${kernel_addr_r} \${ramdisk_addr_r}:\${ramdisk_size} \${fdt_addr_r}"
+echo ""
+echo "Or to boot automatically:"
+echo "  run bootcmd"
