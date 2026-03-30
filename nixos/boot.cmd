@@ -9,19 +9,20 @@
 
 setenv ramdisk_addr_r 0x10000000
 
-# Initialize MMC device and select partition 1
-mmc dev 0 1
+# Initialize SD card (device 1) and select partition 1
+# Device 0 is eMMC, device 1 is SD card
+mmc dev 1 1
 
-# Manually load kernel, initrd, and device tree
+# Manually load kernel, initrd, and device tree from SD card
 echo "Loading kernel from /Image..."
-load mmc 0:1 ${kernel_addr_r} /Image
+load mmc 1:1 ${kernel_addr_r} /Image
 
 echo "Loading initrd from /initrd..."
-load mmc 0:1 ${ramdisk_addr_r} /initrd
+load mmc 1:1 ${ramdisk_addr_r} /initrd
 setenv ramdisk_size ${filesize}
 
 echo "Loading device tree from /device_trees/rk3399-anbernic-rg552.dtb..."
-load mmc 0:1 ${fdt_addr_r} /device_trees/rk3399-anbernic-rg552.dtb
+load mmc 1:1 ${fdt_addr_r} /device_trees/rk3399-anbernic-rg552.dtb
 
 # Set boot arguments
 setenv bootargs "init=@INIT@ earlycon=uart8250,mmio32,0xff1a0000,1500000n8 console=tty1 console=ttyS2,1500000n8 rootwait loglevel=7 systemd.log_level=debug systemd.log_target=console rd.debug"
