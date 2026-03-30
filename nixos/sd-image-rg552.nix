@@ -31,9 +31,9 @@
 
     # Populate firmware partition with boot files
     populateFirmwareCommands = ''
-      # Copy and compress kernel to avoid memory overlap issues
-      # The uncompressed Image is ~62MB which overlaps with initrd load address
-      ${pkgs.gzip}/bin/gzip -c ${config.system.build.kernel}/Image > firmware/KERNEL.gz
+      # Copy uncompressed kernel
+      # Note: Compression doesn't help with memory overlap since U-Boot decompresses before booting
+      cp ${config.system.build.kernel}/Image firmware/Image
 
       # Copy initrd
       cp ${config.system.build.initialRamdisk}/initrd firmware/initrd

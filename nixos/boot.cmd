@@ -13,8 +13,8 @@ setenv ramdisk_addr_r 0x10000000
 mmc dev 0
 
 # Manually load kernel, initrd, and device tree
-echo "Loading kernel from /KERNEL.gz..."
-load mmc 0:1 ${kernel_addr_r} /KERNEL.gz
+echo "Loading kernel from /Image..."
+load mmc 0:1 ${kernel_addr_r} /Image
 
 echo "Loading initrd from /initrd..."
 load mmc 0:1 ${ramdisk_addr_r} /initrd
