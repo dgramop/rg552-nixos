@@ -9,5 +9,20 @@
 
 setenv ramdisk_addr_r 0x10000000
 
-# Continue with standard extlinux boot
-sysboot mmc 0:1 any ${scriptaddr} /extlinux/extlinux.conf
+# Manually load kernel, initrd, and device tree
+echo "Loading kernel from /KERNEL.gz..."
+load mmc 0:1 ${kernel_addr_r} /KERNEL.gz
+
+echo "Loading initrd from /initrd..."
+load mmc 0:1 ${ramdisk_addr_r} /initrd
+setenv ramdisk_size ${filesize}
+
+echo "Loading device tree from /device_trees/rk3399-anbernic-rg552.dtb..."
+load mmc 0:1 ${fdt_addr_r} /device_trees/rk3399-anbernic-rg552.dtb
+
+# Set boot arguments
+setenv bootargs "init=@INIT@ earlycon=uart8250,mmio32,0xff1a0000,1500000n8 console=tty1 console=ttyS2,1500000n8 rootwait loglevel=7 systemd.log_level=debug systemd.log_target=console rd.debug"
+
+# Boot the kernel
+echo "Booting NixOS kernel..."
+booti ${kernel_addr_r} ${ramdisk_addr_r}:${ramdisk_size} ${fdt_addr_r}

@@ -42,20 +42,15 @@
       mkdir -p firmware/device_trees
       cp ${../rk3399-anbernic-rg552.dtb} firmware/device_trees/rk3399-anbernic-rg552.dtb
 
-      # Create U-Boot boot script to set ramdisk load address higher
-      # This prevents the "RD image overlaps OS image" error
-      ${pkgs.ubootTools}/bin/mkimage -C none -A arm64 -T script -d ${./boot.cmd} firmware/boot.scr
+      # Create U-Boot boot script with proper init path and kernel params
+      # Substitute @INIT@ placeholder with actual init path
+      ${pkgs.gnused}/bin/sed \
+        -e "s|@INIT@|init=${config.system.build.toplevel}/init ${toString config.boot.kernelParams}|g" \
+        ${./boot.cmd} > firmware/boot.cmd.tmp
 
-      # Create extlinux boot configuration
-      # Note: Using .gz compressed kernel to reduce memory footprint
-      mkdir -p firmware/extlinux
-      cat > firmware/extlinux/extlinux.conf <<EOF
-LABEL NixOS
-  LINUX /KERNEL.gz
-  INITRD /initrd
-  FDT /device_trees/rk3399-anbernic-rg552.dtb
-  APPEND init=${config.system.build.toplevel}/init ${toString config.boot.kernelParams}
-EOF
+      # Compile boot script
+      ${pkgs.ubootTools}/bin/mkimage -C none -A arm64 -T script -d firmware/boot.cmd.tmp firmware/boot.scr
+      rm firmware/boot.cmd.tmp
     '';
 
     # Custom post-build command to install bootloader
