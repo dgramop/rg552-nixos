@@ -27,7 +27,8 @@ echo "Loading device tree from /device_trees/rk3399-anbernic-rg552.dtb..."
 load mmc 1:1 ${fdt_addr_r} /device_trees/rk3399-anbernic-rg552.dtb
 
 # Set boot arguments
-setenv bootargs "init=@INIT@ earlycon=uart8250,mmio32,0xff1a0000,1500000n8 console=tty1 console=ttyS2,1500000n8 rootwait loglevel=7 systemd.log_level=debug systemd.log_target=console rd.debug"
+# Note: @INIT@ will be replaced with full kernel parameters by sed substitution
+setenv bootargs "@INIT@"
 
 # Boot the kernel
 echo "Booting NixOS kernel..."
