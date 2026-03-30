@@ -99,10 +99,12 @@
     # Kernel packages defined in kernel.nix (custom patched kernel)
 
     # Kernel parameters
+    # Using Android's earlycon syntax: NO baud rate specified!
+    # The UART is already configured to 1500000 by U-Boot, kernel inherits it
     kernelParams = [
-      "earlycon=uart8250,mmio32,0xff1a0000,1500000n8"  # Early console at 1.5Mbaud (matching U-Boot and Android)
+      "earlycon=uart8250,mmio32,0xff1a0000"  # Early console (no baud rate - inherit from U-Boot)
       "console=tty1"
-      "console=ttyS2,1500000n8"  # Serial console at 1.5Mbaud (same as U-Boot, no baud rate change needed!)
+      "console=ttyS2,1500000n8"  # Serial console at 1.5Mbaud
       "rootwait"
       "loglevel=7"  # Verbose logging
       "systemd.log_level=debug"  # Debug logging for systemd in initrd
