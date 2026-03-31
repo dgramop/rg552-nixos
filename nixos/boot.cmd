@@ -2,6 +2,11 @@
 # The default ramdisk_addr_r conflicts with the large NixOS kernel
 # Move initrd load address to 0x10000000 (256MB) to avoid overlap
 
+# Enable U-Boot debug logging (level 7 = LOGL_DEBUG)
+# Log levels: 0=EMERG, 1=ALERT, 2=CRIT, 3=ERR, 4=WARNING, 5=NOTICE, 6=INFO, 7=DEBUG
+# This requires U-Boot to be compiled with CONFIG_LOG=y
+log level 7
+
 # Set memory addresses for boot
 # kernel_addr_r:  0x02080000 (default, where kernel is decompressed)
 # ramdisk_addr_r: 0x10000000 (256MB - moved higher to avoid overlap)
@@ -38,8 +43,8 @@ echo ""
 echo "Bootargs set to:"
 printenv bootargs
 echo ""
-echo "To boot manually, run:"
-echo "  booti \${kernel_addr_r} \${ramdisk_addr_r}:\${ramdisk_size} \${fdt_addr_r}"
+echo "Booting kernel..."
 echo ""
-echo "Or to boot automatically:"
-echo "  run bootcmd"
+
+# Boot the kernel
+booti ${kernel_addr_r} ${ramdisk_addr_r}:${ramdisk_size} ${fdt_addr_r}
