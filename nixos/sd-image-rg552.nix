@@ -8,7 +8,6 @@
 {
   imports = [
     "${modulesPath}/installer/sd-card/sd-image.nix"
-    ./kernel.nix
   ];
 
   # ARM64 platform
@@ -30,17 +29,15 @@
     populateRootCommands = "";
 
     # Populate firmware partition with boot files
+    # NOTE: This is overridden by configuration.nix which uses ROCKNIX kernel
     populateFirmwareCommands = ''
       # Copy uncompressed kernel
-      # Note: Compression doesn't help with memory overlap since U-Boot decompresses before booting
       cp ${config.system.build.kernel}/Image firmware/Image
 
       # Copy initrd
       cp ${config.system.build.initialRamdisk}/initrd firmware/initrd
 
-      # Copy device tree
-      mkdir -p firmware/device_trees
-      cp ${../rk3399-anbernic-rg552.dtb} firmware/device_trees/rk3399-anbernic-rg552.dtb
+      # Device tree is provided by kernel package
 
       # Create U-Boot boot script with proper init path and kernel params
       # Substitute @INIT@ placeholder with actual init path
@@ -96,8 +93,6 @@
 
   # Boot configuration
   boot = {
-    # Kernel packages defined in kernel.nix (custom patched kernel)
-
     # Kernel parameters
     # Using Android's earlycon syntax: NO baud rate specified!
     # The UART is already configured to 1500000 by U-Boot, kernel inherits it
