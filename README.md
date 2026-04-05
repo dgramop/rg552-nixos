@@ -61,24 +61,12 @@ nix build .#nixosConfigurations.rg552.config.system.build.sdImage
 
 ### 4. Flash to SD Card
 
-**Using the automated script:**
 ```bash
 # Decompress image if needed
-gunzip nixos-sd-image-*.img.gz
+gunzip result/sd-image/*.img.gz
 
-# Flash with our script
-sudo ./flash-sd.sh \
-  --bootloader nixos/u-boot-rockchip.bin \
-  --kernel <path-to-kernel-Image> \
-  --dtb rk3399-anbernic-rg552.dtb \
-  --rootfs <path-to-rootfs> \
-  /dev/sdX  # Replace with your SD card device
-```
-
-**Or manually:**
-```bash
 # Write the complete image
-sudo dd if=nixos-sd-image-*.img of=/dev/sdX bs=4M status=progress conv=fsync
+sudo dd if=result/sd-image/*.img of=/dev/sdX bs=4M status=progress conv=fsync
 ```
 
 ### 5. Boot the RG552
@@ -89,12 +77,10 @@ sudo dd if=nixos-sd-image-*.img of=/dev/sdX bs=4M status=progress conv=fsync
 
 ## Files
 
-- **flash-sd.sh** - Minimal SD card flashing script
 - **get-bootloader.sh** - Extract/download bootloader from ROCKNIX
 - **SD_CARD_LAYOUT.md** - Technical documentation of boot layout
-- **rk3399-anbernic-rg552.dts** - Device tree source (from ROCKNIX)
-- **rk3399-anbernic-rg552.dtb** - Compiled device tree (you need to build this)
-- **nixos/** - NixOS image builder module
+- **flake.nix** - Nix flake for building SD images and kernel
+- **nixos/** - NixOS configuration and kernel build files
 
 ## NixOS Module Structure
 

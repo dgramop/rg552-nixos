@@ -14,11 +14,13 @@ This guide will walk you through the process of creating a bootable NixOS SD car
 - `rk3399-anbernic-rg552.dtb` - Compiled device tree blob (70KB, ready to use)
 
 ✅ **Tools Created**
-- `flash-sd.sh` - Minimal SD card flashing script
 - `get-bootloader.sh` - Extract/download bootloader from ROCKNIX
 - `compile-dtb.sh` - Compile device tree with kernel headers
+- `flake.nix` - Nix flake for building SD images and kernel
 - `nixos/sd-image-rg552.nix` - NixOS SD image builder module
-- `nixos/configuration.nix` - Example NixOS configuration
+- `nixos/configuration.nix` - NixOS configuration with prebuilt ROCKNIX kernel
+- `nixos/configuration-built-kernel.nix` - NixOS configuration with custom-built kernel
+- `nixos/kernel-build-package.nix` - Custom kernel build with ROCKNIX patches
 
 ✅ **Documentation Written**
 - `README.md` - Project overview and quick start
@@ -42,72 +44,30 @@ This will:
 3. Extract just the bootloader (sectors 64-32767)
 4. Save it as `nixos/u-boot-rockchip.bin`
 
-### 2. Test Basic Boot (Minimal Approach)
+### 2. Build NixOS SD Image (Using Flakes)
 
-Before building a full NixOS image, let's verify the SD card can boot using a minimal setup:
-
-```bash
-# You'll need:
-# - A blank SD card (minimum 8GB)
-# - The bootloader (from step 1)
-# - A basic Linux kernel Image for aarch64
-# - The compiled device tree (already done: rk3399-anbernic-rg552.dtb)
-
-# Example with a test kernel:
-sudo ./flash-sd.sh \
-  --bootloader nixos/u-boot-rockchip.bin \
-  --kernel /path/to/arm64/Image \
-  --dtb rk3399-anbernic-rg552.dtb \
-  /dev/sdX  # Your SD card device
-```
-
-**What this tests:**
-- ✅ SD card partition layout is correct
-- ✅ Bootloader is placed at correct offset (sector 64)
-- ✅ U-Boot can find and load extlinux.conf
-- ✅ Device tree loads without errors
-- ✅ Kernel starts (even if it doesn't fully boot without a rootfs)
-
-**Expected result:**
-- RG552 should attempt to boot from SD card
-- You should see boot output on serial console (UART2 @ 1.5 Mbaud)
-- Without a proper rootfs, it will panic, but that's OK for now!
-
-### 3. Build NixOS SD Image
-
-Once basic boot works, build a complete NixOS image:
+Build a complete NixOS SD image with the custom kernel:
 
 ```bash
-cd nixos
+# Build with custom-built kernel (recommended - includes display drivers)
+nix build '.#sdImage'
 
-# Make sure you have the bootloader
-ls u-boot-rockchip.bin || \
-  ../get-bootloader.sh --download --output u-boot-rockchip.bin
-
-# Build the image (requires aarch64 support)
-nix-build '<nixpkgs/nixos>' \
-  -A config.system.build.sdImage \
-  -I nixos-config=./configuration.nix \
-  --argstr system aarch64-linux
+# Or build with prebuilt ROCKNIX kernel (faster, for testing)
+nix build '.#sdImageRocknix'
 ```
 
-**If building on x86_64:**
-You need binfmt support for aarch64 emulation:
-```nix
-# On your NixOS build machine's configuration.nix:
-boot.binfmt.emulatedSystems = [ "aarch64-linux" ];
-```
+**What gets built:**
+- ✅ Complete NixOS system with configured kernel
+- ✅ U-Boot bootloader properly placed at sector 64
+- ✅ Device tree compiled and included
+- ✅ Boot script (boot.scr) for U-Boot
+- ✅ Complete root filesystem with NixOS packages
 
-**Alternative: Use your NixOS server:**
-```bash
-# Copy files to server
-scp -r ../rg552 root@dgramop.xyz:/tmp/
+**Build time:**
+- Custom kernel: ~3-4 hours (first build, then cached)
+- Prebuilt kernel: ~10 minutes
 
-# Build on server
-ssh root@dgramop.xyz 'cd /tmp/rg552/nixos && nix-build ...'
-```
-
-### 4. Flash the NixOS Image
+### 3. Flash the NixOS Image
 
 ```bash
 # Decompress if needed
@@ -117,7 +77,7 @@ gunzip result/sd-image/*.img.gz
 sudo dd if=result/sd-image/*.img of=/dev/sdX bs=4M status=progress conv=fsync
 ```
 
-### 5. Boot NixOS!
+### 4. Boot NixOS!
 
 1. Insert SD card into RG552
 2. Power on
@@ -137,21 +97,25 @@ screen /dev/ttyUSB0 1500000
 
 ```
 rg552/
-├── README.md                      # Main documentation
-├── SD_CARD_LAYOUT.md             # Boot layout technical details
-├── GETTING_STARTED.md            # This file
+├── README.md                             # Main documentation
+├── SD_CARD_LAYOUT.md                    # Boot layout technical details
+├── GETTING_STARTED.md                   # This file
+├── flake.nix                            # Nix flake (main build entry point)
 │
-├── flash-sd.sh                   # Flash SD card manually
-├── get-bootloader.sh             # Get bootloader from ROCKNIX
-├── compile-dtb.sh                # Compile device tree
-│
-├── rk3399-anbernic-rg552.dts     # Device tree source (from ROCKNIX)
-├── rk3399-anbernic-rg552.dtb     # Compiled device tree (ready to use)
+├── get-bootloader.sh                    # Get bootloader from ROCKNIX
+├── compile-dtb.sh                       # Compile device tree
 │
 └── nixos/
-    ├── sd-image-rg552.nix        # NixOS image builder module
-    ├── configuration.nix          # Example NixOS config
-    └── u-boot-rockchip.bin       # Bootloader (you need to get this)
+    ├── sd-image-rg552.nix               # NixOS image builder module
+    ├── configuration.nix                # NixOS config with prebuilt ROCKNIX kernel
+    ├── configuration-built-kernel.nix   # NixOS config with custom-built kernel
+    ├── kernel-build-package.nix         # Custom kernel build definition
+    ├── rocknix-kernel.config            # Kernel configuration from ROCKNIX
+    ├── boot.cmd                         # U-Boot boot script source
+    ├── u-boot-rockchip.bin             # Bootloader (you need to get this)
+    └── kernel-patches/                  # ROCKNIX kernel patches
+        ├── mainline/                    # Mainline kernel patches
+        └── rk3399/                      # RK3399-specific patches
 ```
 
 ## Troubleshooting
@@ -262,20 +226,17 @@ Found an issue or got something working? Update the relevant documentation:
 # Compile device tree (if you modify it)
 ./compile-dtb.sh
 
-# Flash minimal test SD card
-sudo ./flash-sd.sh \
-  -b nixos/u-boot-rockchip.bin \
-  -k /path/to/Image \
-  -d rk3399-anbernic-rg552.dtb \
-  /dev/sdX
+# Build NixOS image with custom kernel (recommended)
+nix build '.#sdImage'
 
-# Build NixOS image
-cd nixos && nix-build '<nixpkgs/nixos>' \
-  -A config.system.build.sdImage \
-  -I nixos-config=./configuration.nix
+# Build NixOS image with prebuilt ROCKNIX kernel (faster)
+nix build '.#sdImageRocknix'
+
+# Build just the kernel
+nix build '.#kernel'
 
 # Flash NixOS image
-sudo dd if=result/*.img of=/dev/sdX bs=4M status=progress
+sudo dd if=result/sd-image/*.img of=/dev/sdX bs=4M status=progress conv=fsync
 
 # Serial console
 screen /dev/ttyUSB0 1500000
