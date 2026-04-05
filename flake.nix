@@ -22,6 +22,14 @@
       ];
     };
 
+    # TEMPORARY TEST: Hybrid with prebuilt kernel Image + built DTB
+    nixosConfigurations.rg552-sdimage-hybrid = nixpkgs.lib.nixosSystem {
+      system = "aarch64-linux";
+      modules = [
+        ./nixos/tmp-test-prebuilt-kernel-with-built-dtb.nix
+      ];
+    };
+
     packages.aarch64-linux = {
       # Default: SD image with prebuilt kernel (fast ~10 min builds)
       default = self.nixosConfigurations.rg552-sdimage.config.system.build.sdImage;
@@ -39,6 +47,9 @@
 
       # SD image with BUILT kernel from source (slow ~3-4 hour builds, but customizable)
       sdImageBuilt = self.nixosConfigurations.rg552-sdimage-built.config.system.build.sdImage;
+
+      # TEMPORARY TEST: Hybrid image with prebuilt kernel Image + built DTB (for debugging)
+      hybridImage = self.nixosConfigurations.rg552-sdimage-hybrid.config.system.build.sdImage;
     };
   };
 }

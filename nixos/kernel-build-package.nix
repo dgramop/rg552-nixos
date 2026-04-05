@@ -46,9 +46,19 @@ in buildLinux (args // {
   # Make configuration non-interactive
   autoModules = false;
 
-  # Ignore config errors for options that don't exist in mainline kernel
-  # ROCKNIX config has vendor-specific options that aren't in upstream
+  # Many ROCKNIX config options don't exist in mainline - ignore those
+  # But use structuredExtraConfig to FORCE critical drivers to be enabled
   ignoreConfigErrors = true;
+
+  # CRITICAL: Force DRM/display drivers to be enabled
+  # This ensures they don't get silently disabled even if ignoreConfigErrors is true
+  structuredExtraConfig = with lib.kernel; {
+    DRM = yes;
+    DRM_ROCKCHIP = yes;
+    DRM_DW_MIPI_DSI = yes;
+    DRM_PANEL_SHARP_LS054B3SX01 = yes;
+    DRM_PANFROST = yes;
+  };
 
   # Extra metadata
   extraMeta = {
