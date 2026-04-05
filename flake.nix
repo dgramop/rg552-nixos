@@ -3,13 +3,15 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    plymouth-lite.url = "git+file:../rg552-plymouth";
   };
 
-  outputs = { self, nixpkgs }: {
+  outputs = { self, nixpkgs, plymouth-lite }: {
     # NixOS configuration for RG552 with prebuilt ROCKNIX kernel (FAST)
     nixosConfigurations.rg552-sdimage = nixpkgs.lib.nixosSystem {
       system = "aarch64-linux";
       modules = [
+        plymouth-lite.nixosModules.default
         ./nixos/configuration.nix
       ];
     };
@@ -18,6 +20,7 @@
     nixosConfigurations.rg552-sdimage-built = nixpkgs.lib.nixosSystem {
       system = "aarch64-linux";
       modules = [
+        plymouth-lite.nixosModules.default
         ./nixos/configuration-built-kernel.nix
       ];
     };

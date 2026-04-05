@@ -48,6 +48,12 @@ in
     usbutils
   ];
 
+  # Plymouth boot splash
+  services.plymouth-lite = {
+    enable = true;
+    splashImage = ./rg552.png;
+  };
+
   networking.networkmanager.enable = true;
   services.xserver.enable = true;
   services.xserver.displayManager.lightdm.enable = true;

@@ -74,10 +74,18 @@ in
     usbutils
   ];
 
+  # Plymouth boot splash
+  services.plymouth-lite = {
+    enable = true;
+    splashImage = ./rg552.png;
+  };
+
   # Networking
   networking.networkmanager.enable = true;
 
   # Desktop environment
+  services.xserver.enable = true;
+  services.xserver.displayManager.gdm.enable = true;
   services.xserver.desktopManager.xfce.enable = true;
 
   # Enable SSH for remote access
