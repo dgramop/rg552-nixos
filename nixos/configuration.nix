@@ -45,7 +45,13 @@ in
     vim
     htop
     file
+    usbutils
   ];
+
+  networking.networkmanager.enable = true;
+  services.xserver.enable = true;
+  services.xserver.displayManager.lightdm.enable = true;
+  services.xserver.desktopManager.xfce.enable = true;
 
   # Enable SSH for remote access
   services.openssh = {
@@ -60,8 +66,8 @@ in
   networking = {
     hostName = "rg552";
     useDHCP = false;
-    interfaces.eth0.useDHCP = lib.mkDefault true;
-    wireless.enable = lib.mkDefault false;  # Enable if you have WiFi working
+    # interfaces.eth0.useDHCP = lib.mkDefault true;
+    wireless.enable = lib.mkDefault true;  # Enable if you have WiFi working
   };
 
   system.stateVersion = "24.11";

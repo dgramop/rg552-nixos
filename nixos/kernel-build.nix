@@ -1,0 +1,28 @@
+{ pkgs, ... }:
+
+{
+  boot.kernelPackages = let
+      linux_sgx_pkg = { fetchurl, buildLinux, ... } @ args:
+
+        buildLinux (args // rec {
+          version = "5.4.0-rc3";
+          modDirVersion = version;
+
+          src = fetchurl {
+            url = "https://github.com/jsakkine-intel/linux-sgx/archive/v23.tar.gz";
+            # After the first build attempt, look for "hash mismatch" and then 2 lines below at the "got:" line.
+            # Use "sha256-....." value here.
+            hash = "";
+          };
+          kernelPatches = [];
+
+          structuredExtraConfig = with lib.kernel; {
+            INTEL_SGX = yes;
+          };
+
+          extraMeta.branch = "5.4";
+        } // (args.argsOverride or {}));
+      linux_sgx = pkgs.callPackage linux_sgx_pkg{};
+    in 
+      pkgs.recurseIntoAttrs (pkgs.linuxPackagesFor linux_sgx);
+}
