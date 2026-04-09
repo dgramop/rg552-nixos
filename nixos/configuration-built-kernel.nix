@@ -1,6 +1,5 @@
-# NixOS configuration for Anbernic RG552 with BUILT kernel
+# NixOS configuration for Anbernic RG552
 # Uses buildLinux to compile Linux 6.18.20 with ROCKNIX patches
-# For faster builds, use configuration.nix which uses prebuilt kernel
 { config, lib, pkgs, ... }:
 
 let
@@ -30,9 +29,7 @@ in
   # boot.extraModulePackages = [ rocknixJoypad ];
   # boot.kernelModules = [ "rocknix-singleadc-joypad" ];
 
-  # Override firmware population to use built kernel outputs
-  # CRITICAL: buildLinux outputs DTB to dtbs/rockchip/ (note subdirectory)
-  # This is different from prebuilt kernel which has flat dtbs/ structure
+  # Populate firmware partition with kernel, initrd, device tree, and boot script
   sdImage.populateFirmwareCommands = lib.mkForce ''
     # Copy custom-built kernel Image
     cp ${customKernel}/Image firmware/Image
@@ -74,12 +71,6 @@ in
     usbutils
   ];
 
-  # Plymouth boot splash
-  services.plymouth-lite = {
-    enable = true;
-    splashImage = ./rg552.png;
-  };
-
   # Networking
   networking.networkmanager.enable = true;
 
@@ -99,7 +90,7 @@ in
 
   # Networking configuration
   networking = {
-    hostName = "rg552-built";
+    hostName = "rg552";
     useDHCP = false;
     wireless.enable = lib.mkDefault true;
   };

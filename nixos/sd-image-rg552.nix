@@ -29,7 +29,7 @@
     populateRootCommands = "";
 
     # Populate firmware partition with boot files
-    # NOTE: This is overridden by configuration.nix which uses ROCKNIX kernel
+    # NOTE: This is overridden by configuration-built-kernel.nix
     populateFirmwareCommands = ''
       # Copy uncompressed kernel
       cp ${config.system.build.kernel}/Image firmware/Image
