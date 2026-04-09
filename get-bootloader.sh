@@ -40,7 +40,6 @@ BOOTLOADER INFO:
     - trust.img (ARM Trusted Firmware BL31)
 
     Must be written to SD card at sector 64 (32KB offset).
-    See SD_CARD_LAYOUT.md for details.
 
 EOF
     exit 1
@@ -194,9 +193,7 @@ main() {
         echo "  Location: $OUTPUT"
         echo "  Size: $(numfmt --to=iec-i --suffix=B $size 2>/dev/null || echo $size bytes)"
         echo ""
-        echo "Next steps:"
-        echo "  1. Prepare kernel and device tree"
-        echo "  2. Flash SD card using: ./flash-sd.sh --bootloader $OUTPUT --kernel <kernel> --dtb <dtb> /dev/sdX"
+        echo "Next: place it at nixos/u-boot-rockchip.bin and run 'nix build' to produce the SD image."
         echo ""
         return 0
     else
