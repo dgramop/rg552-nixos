@@ -29,7 +29,7 @@
     populateRootCommands = "";
 
     # Populate firmware partition with boot files
-    # NOTE: This is overridden by configuration-built-kernel.nix
+    # NOTE: This is overridden by configuration.nix
     populateFirmwareCommands = ''
       # Copy uncompressed kernel
       cp ${config.system.build.kernel}/Image firmware/Image
@@ -50,7 +50,7 @@
       rm firmware/boot.cmd.tmp
     '';
 
-    # Bootloader installation is handled by configuration-built-kernel.nix
+    # Bootloader installation is handled by configuration.nix
     # via sdImage.postBuildCommands override
   };
 

@@ -1,22 +1,15 @@
 # NixOS configuration for Anbernic RG552
 # Uses buildLinux to compile Linux 6.18.20 with ROCKNIX patches
-{ config, lib, pkgs, glibc-x86, ... }:
+{ config, lib, pkgs, uboot, ... }:
 
 let
   # Build custom kernel using buildLinux
-  customKernel = pkgs.callPackage ./kernel-build-package.nix {
+  customKernel = pkgs.callPackage ./kernel.nix {
     inherit (pkgs.linuxKernel) buildLinux;
   };
 
   # Create custom kernel packages set
   customKernelPackages = pkgs.linuxPackagesFor customKernel;
-
-  # Build U-Boot bootloader for RK3399
-  # Uses qemu to run x86_64 rkbin tools on aarch64 (same as nixpkgs rkboot)
-  uboot = pkgs.callPackage ./uboot-package.nix {
-    inherit (pkgs) buildUBoot armTrustedFirmwareRK3399 rkbin qemu;
-    inherit glibc-x86;
-  };
 
   # Build rocknix-joypad driver for RG552 controls
   rocknixJoypad = customKernelPackages.callPackage ./rocknix-joypad-driver.nix {};
@@ -26,10 +19,6 @@ in
   imports = [
     ./sd-image-rg552.nix
   ];
-
-  # Allow unfree for Rockchip bootloader tools (rkbin)
-  nixpkgs.config.allowUnfreePredicate = pkg:
-    builtins.elem (lib.getName pkg) [ "u-boot-rg552" "rkbin" ];
 
   # Use our custom-built kernel
   boot.kernelPackages = lib.mkForce customKernelPackages;

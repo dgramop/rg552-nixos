@@ -5,36 +5,41 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
   };
 
-  outputs = { self, nixpkgs }: {
+  outputs = { self, nixpkgs }:
+  let
+    pkgs-arm = import nixpkgs { system = "aarch64-linux"; };
+    pkgs-x86 = import nixpkgs { system = "x86_64-linux"; config.allowUnfree = true; };
+
+    # U-Boot compilation (aarch64)
+    ubootDrv = pkgs-arm.callPackage ./nixos/uboot.nix {
+      inherit (pkgs-arm) buildUBoot armTrustedFirmwareRK3399;
+    };
+
+    # Bootloader assembly with rkbin tools (x86_64)
+    uboot = pkgs-x86.callPackage ./nixos/uboot-rockchip.nix {
+      inherit (pkgs-x86) rkbin;
+      inherit ubootDrv;
+    };
+  in {
     nixosConfigurations.rg552-sdimage = nixpkgs.lib.nixosSystem {
       system = "aarch64-linux";
-      specialArgs = {
-        # x86_64 glibc for qemu user-mode emulation of rkbin tools
-        glibc-x86 = (import nixpkgs { system = "x86_64-linux"; }).glibc;
-      };
+      specialArgs = { inherit uboot; };
       modules = [
-        ./nixos/configuration-built-kernel.nix
+        ./nixos/configuration.nix
       ];
     };
 
     packages.aarch64-linux = {
       default = self.nixosConfigurations.rg552-sdimage.config.system.build.sdImage;
-
       sdImage = self.nixosConfigurations.rg552-sdimage.config.system.build.sdImage;
 
-      # Standalone kernel package (builds Linux 6.18.20 with ROCKNIX patches)
-      kernel = let
-        pkgs = import nixpkgs { system = "aarch64-linux"; };
-      in pkgs.callPackage ./nixos/kernel-build-package.nix {
-        inherit (pkgs.linuxKernel) buildLinux;
+      kernel = pkgs-arm.callPackage ./nixos/kernel.nix {
+        inherit (pkgs-arm.linuxKernel) buildLinux;
       };
+    };
 
-      # Standalone U-Boot package
-      uboot = let
-        pkgs = import nixpkgs { system = "aarch64-linux"; };
-      in pkgs.callPackage ./nixos/uboot-package.nix {
-        inherit (pkgs) buildUBoot armTrustedFirmwareRK3399 rkbin qemu;
-      };
+    packages.x86_64-linux = {
+      inherit uboot;
     };
   };
 }
