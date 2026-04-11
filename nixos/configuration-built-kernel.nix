@@ -1,6 +1,6 @@
 # NixOS configuration for Anbernic RG552
 # Uses buildLinux to compile Linux 6.18.20 with ROCKNIX patches
-{ config, lib, pkgs, ... }:
+{ config, lib, pkgs, glibc-x86, ... }:
 
 let
   # Build custom kernel using buildLinux
@@ -11,6 +11,13 @@ let
   # Create custom kernel packages set
   customKernelPackages = pkgs.linuxPackagesFor customKernel;
 
+  # Build U-Boot bootloader for RK3399
+  # Uses qemu to run x86_64 rkbin tools on aarch64 (same as nixpkgs rkboot)
+  uboot = pkgs.callPackage ./uboot-package.nix {
+    inherit (pkgs) buildUBoot armTrustedFirmwareRK3399 rkbin qemu;
+    inherit glibc-x86;
+  };
+
   # Build rocknix-joypad driver for RG552 controls
   rocknixJoypad = customKernelPackages.callPackage ./rocknix-joypad-driver.nix {};
 
@@ -19,6 +26,10 @@ in
   imports = [
     ./sd-image-rg552.nix
   ];
+
+  # Allow unfree for Rockchip bootloader tools (rkbin)
+  nixpkgs.config.allowUnfreePredicate = pkg:
+    builtins.elem (lib.getName pkg) [ "u-boot-rg552" "rkbin" ];
 
   # Use our custom-built kernel
   boot.kernelPackages = lib.mkForce customKernelPackages;
@@ -50,6 +61,16 @@ in
     # Compile boot script
     ${pkgs.ubootTools}/bin/mkimage -C none -A arm64 -T script -d firmware/boot.cmd.tmp firmware/boot.scr
     rm firmware/boot.cmd.tmp
+  '';
+
+  # Install U-Boot bootloader into raw image sectors
+  sdImage.postBuildCommands = lib.mkForce ''
+    # Combined bootloader (DDR init + SPL + U-Boot + ATF) at sector 64
+    dd if=${uboot}/u-boot-rockchip.bin of=$img bs=512 seek=64 conv=notrunc
+
+    # Fix boot flags: enable on partition 1 (firmware), disable on partition 2 (root)
+    # Improves U-Boot scan priority and avoids USB crash race condition
+    printf 'a\n1\na\n2\nw\n' | ${pkgs.util-linux}/bin/fdisk $img 2>&1 || true
   '';
 
   # Boot parameters (use console=ttyS2 like ROCKNIX does)

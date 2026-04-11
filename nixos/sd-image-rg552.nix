@@ -50,45 +50,8 @@
       rm firmware/boot.cmd.tmp
     '';
 
-    # Custom post-build command to install bootloader
-    postBuildCommands = ''
-      # Install bootloader at sector 64 (32KB offset)
-      if [ -f "${./u-boot-rockchip.bin}" ]; then
-        echo "Installing RK3399 bootloader at sector 64..."
-        dd if=${./u-boot-rockchip.bin} of=$img bs=512 seek=64 conv=notrunc
-      else
-        echo "WARNING: u-boot-rockchip.bin not found!"
-        echo "Run: ./get-bootloader.sh --download --output nixos/u-boot-rockchip.bin"
-        exit 1
-      fi
-
-      # Fix boot flag on partition 1 (firmware), unset on partition 2 (root)
-      # This improves U-Boot scan priority and reduces USB crash race condition
-      echo "Fixing boot flags..."
-      echo "Before fdisk:"
-      ${pkgs.util-linux}/bin/fdisk -l $img | grep "^$img"
-
-      # Toggle boot flags: enable on partition 1, disable on partition 2
-      printf 'a\n1\na\n2\nw\n' | ${pkgs.util-linux}/bin/fdisk $img 2>&1 | grep -E "(bootable|partition table|Writing)" || true
-
-      echo "After fdisk:"
-      ${pkgs.util-linux}/bin/fdisk -l $img | grep "^$img"
-
-      # Verify that partition 1 has boot flag and partition 2 doesn't
-      if ${pkgs.util-linux}/bin/fdisk -l $img | grep "^''${img}1" | grep -q '\*'; then
-        echo "✓ Boot flag correctly set on partition 1 (firmware)"
-      else
-        echo "✗ ERROR: Boot flag NOT set on partition 1 (firmware)"
-        exit 1
-      fi
-
-      if ! ${pkgs.util-linux}/bin/fdisk -l $img | grep "^''${img}2" | grep -q '\*'; then
-        echo "✓ Boot flag correctly unset on partition 2 (root)"
-      else
-        echo "✗ ERROR: Boot flag incorrectly set on partition 2 (root)"
-        exit 1
-      fi
-    '';
+    # Bootloader installation is handled by configuration-built-kernel.nix
+    # via sdImage.postBuildCommands override
   };
 
   # Boot configuration
