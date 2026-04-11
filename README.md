@@ -2,6 +2,8 @@
 
 NixOS on the Anbernic RG552 (RK3399). Builds U-Boot, ARM Trusted Firmware, and a custom Linux 6.18.20 kernel with ROCKNIX hardware patches — all from source in Nix — and produces a flashable SD card image.
 
+Heavily leaned on the ROCKNIX project for devicetrees, patches, and kernel drivers + pine project for docs
+
 ## Build & Flash
 
 - **Build the SD image**: `nix build` (first build compiles kernel + U-Boot, ~3-4 hours; cached after that)
