@@ -73,6 +73,9 @@ in
   # Allow missing modules instead of failing the build
   boot.initrd.allowMissingModules = true;
 
+  # WiFi firmware (RTL8821CS)
+  hardware.firmware = [ pkgs.linux-firmware ];
+
   # System packages
   environment.systemPackages = with pkgs; [
     vim
@@ -102,7 +105,6 @@ in
   networking = {
     hostName = "rg552";
     useDHCP = false;
-    wireless.enable = lib.mkDefault true;
   };
 
   system.stateVersion = "24.11";

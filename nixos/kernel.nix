@@ -50,14 +50,16 @@ in buildLinux (args // {
   # But use structuredExtraConfig to FORCE critical drivers to be enabled
   ignoreConfigErrors = true;
 
-  # CRITICAL: Force DRM/display drivers to be enabled
-  # This ensures they don't get silently disabled even if ignoreConfigErrors is true
+  # Force critical drivers that ignoreConfigErrors might silently disable
   structuredExtraConfig = with lib.kernel; {
     DRM = yes;
     DRM_ROCKCHIP = yes;
     DRM_DW_MIPI_DSI = yes;
     DRM_PANEL_SHARP_LS054B3SX01 = yes;
     DRM_PANFROST = yes;
+
+    # WiFi (RTL8821CS via SDIO) — Kconfig auto-selects RTW88_SDIO, RTW88_CORE
+    RTW88_8821CS = module;
   };
 
   # Extra metadata
