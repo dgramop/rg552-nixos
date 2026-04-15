@@ -67,14 +67,29 @@ in
     "console=ttyS2,1500000"
     "console=tty0"
     "loglevel=7"
+    "fbcon=rotate:3"  # Rotate framebuffer console to landscape
   ];
 
   # ROCKNIX kernel doesn't have all NixOS default modules (like RAID controllers)
   # Allow missing modules instead of failing the build
   boot.initrd.allowMissingModules = true;
 
-  # WiFi firmware (RTL8821CS)
+  # WiFi (RTL8188FTV USB)
   hardware.firmware = [ pkgs.linux-firmware ];
+  boot.kernelModules = [ "rtl8xxxu" ];
+
+  # WiFi chip power — GPIO3_C1 (pin 17) enables the USB WiFi adapter.
+  # gpioset blocks and holds the line; stopping the service powers off WiFi.
+  systemd.services.wifi-power = {
+    description = "WiFi power (GPIO3_C1)";
+    wantedBy = [ "multi-user.target" ];
+    before = [ "NetworkManager.service" ];
+    serviceConfig = {
+      ExecStart = "${pkgs.libgpiod}/bin/gpioset -c 3 17=1";
+      Restart = "on-failure";
+    };
+  };
+
 
   # System packages
   environment.systemPackages = with pkgs; [
@@ -82,6 +97,7 @@ in
     htop
     file
     usbutils
+    libgpiod
   ];
 
   # Networking
@@ -89,8 +105,24 @@ in
 
   # Desktop environment
   services.xserver.enable = true;
-  services.xserver.displayManager.gdm.enable = true;
+  services.displayManager.gdm.enable = true;
+  services.displayManager.gdm.wayland = false;
   services.xserver.desktopManager.xfce.enable = true;
+
+  # Rotate display to landscape (Sharp panel is natively portrait 1152x1920)
+  services.xserver.xrandrHeads = [{
+    output = "DSI-1";
+    monitorConfig = ''
+      Option "Rotate" "left"
+    '';
+  }];
+
+  # Rotate touchscreen input to match display rotation
+  services.xserver.inputClassSections = [''
+    Identifier "Goodix Touchscreen"
+    MatchProduct "Goodix"
+    Option "TransformationMatrix" "0 -1 1 1 0 0 0 0 1"
+  ''];
 
   # Enable SSH for remote access
   services.openssh = {

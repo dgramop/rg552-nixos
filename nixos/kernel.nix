@@ -58,8 +58,8 @@ in buildLinux (args // {
     DRM_PANEL_SHARP_LS054B3SX01 = yes;
     DRM_PANFROST = yes;
 
-    # WiFi (RTL8821CS via SDIO) — Kconfig auto-selects RTW88_SDIO, RTW88_CORE
-    RTW88_8821CS = module;
+    # WiFi (RTL8188FTV via USB)
+    RTL8XXXU = module;
   };
 
   # Extra metadata
