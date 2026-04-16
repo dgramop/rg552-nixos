@@ -105,8 +105,8 @@ in
 
   # Desktop environment
   services.xserver.enable = true;
-  services.displayManager.gdm.enable = true;
-  services.displayManager.gdm.wayland = false;
+  services.xserver.displayManager.gdm.enable = true;
+  services.xserver.displayManager.gdm.wayland = false;
   services.xserver.desktopManager.xfce.enable = true;
 
   # Rotate display to landscape (Sharp panel is natively portrait 1152x1920)

@@ -5,12 +5,16 @@ NixOS on the Anbernic RG552 (RK3399). Builds U-Boot, ARM Trusted Firmware, and a
 Heavily leaned on the ROCKNIX project for devicetrees, patches, and kernel drivers + pine project for docs
 
 ## Build & Flash
+- **Build the SD image**: `nix build .#packages.aarch64-linux.sdImage`
+- **Flash**: `sudo dd if=result/sd-image/*.img of=/dev/sdX bs=4M status=progress conv=fsync`
 
-- **Build the SD image**: `nix build` (first build compiles kernel + U-Boot, ~3-4 hours; cached after that)
+
+## Debugging/parts
 - **Build just the kernel**: `nix build '.#kernel'`
 - **Build just U-Boot**: `nix build '.#uboot'`
-- **Flash**: `sudo dd if=result/sd-image/*.img of=/dev/sdX bs=4M status=progress conv=fsync`
 - **Serial console** (for debugging): UART2 on GPIO pins 6 (GND), 8 (TX), 10 (RX) — `screen /dev/ttyUSB0 1500000`
+  - both uboot and the kernel log at this baud. you can find these pins right next to the fan (they are labeled)
+
 
 ## SD Card Layout
 
