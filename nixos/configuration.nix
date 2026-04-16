@@ -1,95 +1,18 @@
-# NixOS configuration for Anbernic RG552
-# Uses buildLinux to compile Linux 6.18.20 with ROCKNIX patches
-{ config, lib, pkgs, uboot, ... }:
+# RG552 NixOS configuration
+# Opinionated user config — edit this to your liking.
+# Hardware specifics are in base.nix.
+{ config, lib, pkgs, ... }:
 
-let
-  # Build custom kernel using buildLinux
-  customKernel = pkgs.callPackage ./kernel.nix {
-    inherit (pkgs.linuxKernel) buildLinux;
-  };
-
-  # Create custom kernel packages set
-  customKernelPackages = pkgs.linuxPackagesFor customKernel;
-
-  # Build rocknix-joypad driver for RG552 controls
-  rocknixJoypad = customKernelPackages.callPackage ./rocknix-joypad-driver.nix {};
-
-in
 {
   imports = [
-    ./sd-image-rg552.nix
+    ./base.nix
   ];
 
-  # Use our custom-built kernel
-  boot.kernelPackages = lib.mkForce customKernelPackages;
-
-  # TODO: Add ROCKNIX joypad driver for RG552 controls
-  # The joypad driver needs to be built in-tree with the kernel, not as an external module
-  # For now, building without it to get a working base system
-  # boot.extraModulePackages = [ rocknixJoypad ];
-  # boot.kernelModules = [ "rocknix-singleadc-joypad" ];
-
-  # Populate firmware partition with kernel, initrd, device tree, and boot script
-  sdImage.populateFirmwareCommands = lib.mkForce ''
-    # Copy custom-built kernel Image
-    cp ${customKernel}/Image firmware/Image
-
-    # Copy NixOS initrd (still needed for NixOS boot)
-    cp ${config.system.build.initialRamdisk}/${config.system.boot.loader.initrdFile} firmware/initrd
-
-    # Copy device tree from buildLinux output
-    # NOTE: buildLinux creates dtbs/rockchip/ subdirectory structure
-    mkdir -p firmware/device_trees
-    cp ${customKernel}/dtbs/rockchip/rk3399-anbernic-rg552.dtb firmware/device_trees/rk3399-anbernic-rg552.dtb
-
-    # Create U-Boot boot script with proper init path
-    ${pkgs.gnused}/bin/sed \
-      -e "s|@INIT@|init=${config.system.build.toplevel}/init ${toString config.boot.kernelParams}|g" \
-      ${./boot.cmd} > firmware/boot.cmd.tmp
-
-    # Compile boot script
-    ${pkgs.ubootTools}/bin/mkimage -C none -A arm64 -T script -d firmware/boot.cmd.tmp firmware/boot.scr
-    rm firmware/boot.cmd.tmp
-  '';
-
-  # Install U-Boot bootloader into raw image sectors
-  sdImage.postBuildCommands = lib.mkForce ''
-    # Combined bootloader (DDR init + SPL + U-Boot + ATF) at sector 64
-    dd if=${uboot}/u-boot-rockchip.bin of=$img bs=512 seek=64 conv=notrunc
-
-    # Fix boot flags: enable on partition 1 (firmware), disable on partition 2 (root)
-    # Improves U-Boot scan priority and avoids USB crash race condition
-    printf 'a\n1\na\n2\nw\n' | ${pkgs.util-linux}/bin/fdisk $img 2>&1 || true
-  '';
-
-  # Boot parameters (use console=ttyS2 like ROCKNIX does)
-  boot.kernelParams = lib.mkForce [
-    "console=ttyS2,1500000"
-    "console=tty0"
-    "loglevel=7"
-    "fbcon=rotate:3"  # Rotate framebuffer console to landscape
-  ];
-
-  # ROCKNIX kernel doesn't have all NixOS default modules (like RAID controllers)
-  # Allow missing modules instead of failing the build
-  boot.initrd.allowMissingModules = true;
-
-  # WiFi (RTL8188FTV USB)
-  hardware.firmware = [ pkgs.linux-firmware ];
-  boot.kernelModules = [ "rtl8xxxu" ];
-
-  # WiFi chip power — GPIO3_C1 (pin 17) enables the USB WiFi adapter.
-  # gpioset blocks and holds the line; stopping the service powers off WiFi.
-  systemd.services.wifi-power = {
-    description = "WiFi power (GPIO3_C1)";
-    wantedBy = [ "multi-user.target" ];
-    before = [ "NetworkManager.service" ];
-    serviceConfig = {
-      ExecStart = "${pkgs.libgpiod}/bin/gpioset -c 3 17=1";
-      Restart = "on-failure";
-    };
-  };
-
+  # Desktop environment
+  services.xserver.enable = true;
+  services.xserver.displayManager.gdm.enable = true;
+  services.xserver.displayManager.gdm.wayland = false;
+  services.xserver.desktopManager.xfce.enable = true;
 
   # System packages
   environment.systemPackages = with pkgs; [
@@ -100,30 +23,6 @@ in
     libgpiod
   ];
 
-  # Networking
-  networking.networkmanager.enable = true;
-
-  # Desktop environment
-  services.xserver.enable = true;
-  services.xserver.displayManager.gdm.enable = true;
-  services.xserver.displayManager.gdm.wayland = false;
-  services.xserver.desktopManager.xfce.enable = true;
-
-  # Rotate display to landscape (Sharp panel is natively portrait 1152x1920)
-  services.xserver.xrandrHeads = [{
-    output = "DSI-1";
-    monitorConfig = ''
-      Option "Rotate" "left"
-    '';
-  }];
-
-  # Rotate touchscreen input to match display rotation
-  services.xserver.inputClassSections = [''
-    Identifier "Goodix Touchscreen"
-    MatchProduct "Goodix"
-    Option "TransformationMatrix" "0 -1 1 1 0 0 0 0 1"
-  ''];
-
   # Enable SSH for remote access
   services.openssh = {
     enable = true;
@@ -132,12 +31,4 @@ in
 
   # Set root password (change this!)
   users.users.root.initialPassword = "nixos";
-
-  # Networking configuration
-  networking = {
-    hostName = "rg552";
-    useDHCP = false;
-  };
-
-  system.stateVersion = "24.11";
 }
