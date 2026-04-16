@@ -71,6 +71,9 @@ in
   networking.hostName = lib.mkDefault "rg552";
   networking.useDHCP = false;
 
+  # Use modesetting driver (fbdev has broken ABI on this nixpkgs)
+  services.xserver.videoDrivers = [ "modesetting" ];
+
   # Display rotation (Sharp panel is natively portrait 1152x1920)
   services.xserver.xrandrHeads = [{
     output = "DSI-1";
