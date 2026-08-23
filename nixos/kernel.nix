@@ -14,6 +14,7 @@ let
     { name = "pwm-set-period"; patch = ../kernel-patches/mainline/0003-pwm-add-pwm_set_period.patch; }
     { name = "adc-keys-redirect"; patch = ../kernel-patches/mainline/0004-input-adc-keys-redirect-keycode-316-to-rocknix-joypa.patch; }
     { name = "rtl8733bu-bluetooth"; patch = ../kernel-patches/mainline/0005-Bluetooth-btrtl-Add-the-support-for-RTL8733BU.patch; }
+    { name = "rocknix-joypad"; patch = ../kernel-patches/mainline/0006-input-add-rocknix-joypad-driver.patch; }
 
     # RK3399 device-specific patches (9)
     # NOTE: 000-anbernic-rg552.patch adds the device tree source file
@@ -50,6 +51,11 @@ in buildLinux (args // {
   # But use structuredExtraConfig to FORCE critical drivers to be enabled
   ignoreConfigErrors = true;
 
+  # Extra config appended raw (for options added by our patches)
+  extraConfig = ''
+    ROCKNIX_SINGLEADC_JOYPAD y
+  '';
+
   # Force critical drivers that ignoreConfigErrors might silently disable
   structuredExtraConfig = with lib.kernel; {
     DRM = yes;
@@ -60,6 +66,7 @@ in buildLinux (args // {
 
     # WiFi (RTL8188FTV via USB)
     RTL8XXXU = module;
+
   };
 
   # Extra metadata

@@ -15,6 +15,7 @@ Heavily leaned on the ROCKNIX project for devicetrees, patches, and kernel drive
 - **Serial console** (for debugging): UART2 on GPIO pins 6 (GND), 8 (TX), 10 (RX) — `screen /dev/ttyUSB0 1500000`
   - both uboot and the kernel log at this baud. you can find these pins right next to the fan (they are labeled)
 
+![red box around desoldered serial header](./serial-location.jpg)
 
 ## SD Card Layout
 

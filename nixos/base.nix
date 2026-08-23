@@ -19,10 +19,7 @@ in
   boot.kernelPackages = lib.mkForce customKernelPackages;
   boot.initrd.allowMissingModules = true;
 
-  # TODO: Add ROCKNIX joypad driver for RG552 controls
-  # The joypad driver needs to be built in-tree with the kernel, not as an external module
-  # boot.extraModulePackages = [ rocknixJoypad ];
-  # boot.kernelModules = [ "rocknix-singleadc-joypad" ];
+  # boot.extraModulePackages = [ rocknixJoypad ];  # Can't build out-of-tree (needs INPUT_POLLDEV symbols)
 
   # Boot parameters
   boot.kernelParams = lib.mkForce [

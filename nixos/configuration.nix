@@ -10,7 +10,7 @@
 
   # Desktop environment
   services.xserver.enable = true;
-  services.displayManager.gdm.enable = true;
+  services.displayManager.ly.enable = true;
   services.xserver.desktopManager.xfce.enable = true;
 
   # System packages
