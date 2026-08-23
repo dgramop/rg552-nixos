@@ -10,7 +10,13 @@
 
   # Desktop environment
   services.xserver.enable = true;
-  services.displayManager.ly.enable = true;
+  services.displayManager = {
+    ly.enable = true;
+    autoLogin = {
+      user = "rg552";
+      enable = true;
+    };
+  };
   services.xserver.desktopManager.xfce.enable = true;
 
   # System packages
