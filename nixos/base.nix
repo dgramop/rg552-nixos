@@ -29,23 +29,22 @@ in
     "fbcon=rotate:3"
   ];
 
-  # Firmware partition (kernel, initrd, device tree, boot script)
-  sdImage.populateFirmwareCommands = lib.mkForce ''
-    cp ${customKernel}/Image firmware/Image
-    cp ${config.system.build.initialRamdisk}/${config.system.boot.loader.initrdFile} firmware/initrd
-    mkdir -p firmware/device_trees
-    cp ${customKernel}/dtbs/rockchip/rk3399-anbernic-rg552.dtb firmware/device_trees/rk3399-anbernic-rg552.dtb
-    ${pkgs.gnused}/bin/sed \
-      -e "s|@INIT@|init=${config.system.build.toplevel}/init ${toString config.boot.kernelParams}|g" \
-      ${./boot.cmd} > firmware/boot.cmd.tmp
-    ${pkgs.ubootTools}/bin/mkimage -C none -A arm64 -T script -d firmware/boot.cmd.tmp firmware/boot.scr
-    rm firmware/boot.cmd.tmp
+  # DTB for this board — extlinux uses this to emit the FDT line.
+  hardware.deviceTree.name = "rockchip/rk3399-anbernic-rg552.dtb";
+
+  # Seed /boot/extlinux/extlinux.conf on the ext4 root at image-build time.
+  # At runtime, generic-extlinux-compatible keeps this in sync per generation.
+  sdImage.populateRootCommands = lib.mkForce ''
+    mkdir -p ./files/boot
+    ${config.boot.loader.generic-extlinux-compatible.populateCmd} -c ${config.system.build.toplevel} -d ./files/boot
   '';
 
-  # Bootloader (U-Boot at sector 64)
+  # Bootloader (U-Boot at sector 64). sd-image already marks p2 (ext4 root)
+  # bootable, which is what distro-boot needs to find /boot/extlinux/extlinux.conf.
+  # (Previously we toggled bootable to p1 for the boot.scr-on-FAT flow — no
+  # longer needed and actively harmful for extlinux.)
   sdImage.postBuildCommands = lib.mkForce ''
     dd if=${uboot}/u-boot-rockchip.bin of=$img bs=512 seek=64 conv=notrunc
-    printf 'a\n1\na\n2\nw\n' | ${pkgs.util-linux}/bin/fdisk $img 2>&1 || true
   '';
 
   # WiFi (RTL8188FTV USB)

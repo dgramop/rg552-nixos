@@ -28,27 +28,10 @@
     # Root filesystem population (handled by NixOS build system)
     populateRootCommands = "";
 
-    # Populate firmware partition with boot files
-    # NOTE: This is overridden by configuration.nix
-    populateFirmwareCommands = ''
-      # Copy uncompressed kernel
-      cp ${config.system.build.kernel}/Image firmware/Image
-
-      # Copy initrd
-      cp ${config.system.build.initialRamdisk}/initrd firmware/initrd
-
-      # Device tree is provided by kernel package
-
-      # Create U-Boot boot script with proper init path and kernel params
-      # Substitute @INIT@ placeholder with actual init path
-      ${pkgs.gnused}/bin/sed \
-        -e "s|@INIT@|init=${config.system.build.toplevel}/init ${toString config.boot.kernelParams}|g" \
-        ${./boot.cmd} > firmware/boot.cmd.tmp
-
-      # Compile boot script
-      ${pkgs.ubootTools}/bin/mkimage -C none -A arm64 -T script -d firmware/boot.cmd.tmp firmware/boot.scr
-      rm firmware/boot.cmd.tmp
-    '';
+    # Firmware partition unused — U-Boot lives at raw sectors (see base.nix
+    # postBuildCommands), and kernel/initrd/dtb are loaded from the ext4 root
+    # via extlinux (see populateRootCommands in base.nix).
+    populateFirmwareCommands = "";
 
     # Bootloader installation is handled by configuration.nix
     # via sdImage.postBuildCommands override
@@ -76,10 +59,11 @@
       emergencyAccess = true;  # Allow emergency shell access
     };
 
-    # Use extlinux boot (but we handle conf generation ourselves)
+    # Use extlinux (distro boot): U-Boot's stock env scans for
+    # /boot/extlinux/extlinux.conf on ext4 and sysboot's it.
     loader = {
       grub.enable = false;
-      generic-extlinux-compatible.enable = false;  # We generate extlinux.conf manually
+      generic-extlinux-compatible.enable = true;
     };
 
     # Initial ramdisk
