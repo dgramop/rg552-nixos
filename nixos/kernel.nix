@@ -67,6 +67,34 @@ in buildLinux (args // {
     # WiFi (RTL8188FTV via USB)
     RTL8XXXU = module;
 
+    # nftables for NixOS firewall
+    NF_TABLES = module;
+    NF_TABLES_INET = yes;
+    NF_TABLES_NETDEV = yes;
+    NF_TABLES_IPV4 = yes;
+    NF_TABLES_IPV6 = yes;
+    NFT_COMPAT = module;
+    NFT_CT = module;
+    NFT_LOG = module;
+    NFT_LIMIT = module;
+    NFT_REJECT = module;
+    NFT_NAT = module;
+    NFT_MASQ = module;
+
+    NETFILTER_XT_MATCH_PKTTYPE = module;
+    NETFILTER_XT_MATCH_STATE = module;
+    NETFILTER_XT_MATCH_CONNTRACK = module;
+    NETFILTER_XT_MATCH_MULTIPORT = module;
+    NETFILTER_XT_MATCH_ADDRTYPE = module;
+    NETFILTER_XT_MATCH_TCPMSS = module;
+    NETFILTER_XT_MATCH_LIMIT = module;
+    NETFILTER_XT_MATCH_COMMENT = module;
+    NETFILTER_XT_TARGET_REJECT = module;
+    NETFILTER_XT_TARGET_LOG = module;
+    IP_NF_FILTER = module;
+    IP_NF_TARGET_REJECT = module;
+    IP6_NF_FILTER = module;
+    IP6_NF_TARGET_REJECT = module;
   };
 
   # Extra metadata
