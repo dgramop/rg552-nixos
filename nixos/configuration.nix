@@ -30,6 +30,8 @@
     settings.PermitRootLogin = "yes";
   };
 
+  networking.firewall.enable = false;
+
   # Set root password (change this!)
   users.users.root.initialPassword = "nixos";
 }

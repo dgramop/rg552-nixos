@@ -27,9 +27,10 @@ let
     { name = "cpu-nvmem"; patch = ../kernel-patches/rk3399/007-enable-cpu-nvmem.patch; }
     { name = "boot-fanspeed"; patch = ../kernel-patches/rk3399/998-set-boot-fanspeed.patch; }
     { name = "clear-log-spam"; patch = ../kernel-patches/rk3399/999-clear-log-spam.patch; }
+
   ];
 
-in buildLinux (args // {
+in (buildLinux (args // {
   inherit version kernelPatches;
 
   # Kernel source from kernel.org
@@ -50,11 +51,6 @@ in buildLinux (args // {
   # Many ROCKNIX config options don't exist in mainline - ignore those
   # But use structuredExtraConfig to FORCE critical drivers to be enabled
   ignoreConfigErrors = true;
-
-  # Extra config appended raw (for options added by our patches)
-  extraConfig = ''
-    ROCKNIX_SINGLEADC_JOYPAD y
-  '';
 
   # Force critical drivers that ignoreConfigErrors might silently disable
   structuredExtraConfig = with lib.kernel; {
@@ -82,6 +78,9 @@ in buildLinux (args // {
     NFT_MASQ = module;
 
     NETFILTER_XT_MATCH_PKTTYPE = module;
+    NETFILTER_XT_MATCH_RPFILTER = module;
+    IP_NF_MATCH_RPFILTER = module;
+    IP6_NF_MATCH_RPFILTER = module;
     NETFILTER_XT_MATCH_STATE = module;
     NETFILTER_XT_MATCH_CONNTRACK = module;
     NETFILTER_XT_MATCH_MULTIPORT = module;
@@ -106,4 +105,40 @@ in buildLinux (args // {
     # This is a long build - expect 2-4 hours on first build
     timeout = 14400; # 4 hours
   };
-} // (args.argsOverride or {}))
+} // (args.argsOverride or {}))).overrideAttrs (old: {
+  # Rebind the D-pad + a few triggers/face-buttons in the DT so the joypad
+  # emits keyboard codes for desktop navigation.
+  postPatch = (old.postPatch or "") + ''
+    substituteInPlace arch/arm64/boot/dts/rockchip/rk3399-anbernic-rg552.dts \
+      --replace-fail 'linux,code = <BTN_DPAD_UP>;'    'linux,code = <KEY_UP>;' \
+      --replace-fail 'linux,code = <BTN_DPAD_DOWN>;'  'linux,code = <KEY_DOWN>;' \
+      --replace-fail 'linux,code = <BTN_DPAD_LEFT>;'  'linux,code = <KEY_LEFT>;' \
+      --replace-fail 'linux,code = <BTN_DPAD_RIGHT>;' 'linux,code = <KEY_RIGHT>;' \
+      --replace-fail 'linux,code = <BTN_EAST>;'       'linux,code = <KEY_ESC>;' \
+      --replace-fail 'linux,code = <BTN_SOUTH>;'      'linux,code = <KEY_BACKSPACE>;' \
+      --replace-fail 'linux,code = <BTN_WEST>;'       'linux,code = <KEY_SPACE>;' \
+      --replace-fail 'linux,code = <BTN_NORTH>;'      'linux,code = <KEY_DELETE>;' \
+      --replace-fail 'linux,code = <BTN_START>;'      'linux,code = <KEY_LEFTMETA>;' \
+      --replace-fail 'linux,code = <BTN_SELECT>;'     'linux,code = <KEY_HOME>;' \
+      --replace-fail 'linux,code = <BTN_TL>;'         'linux,code = <KEY_ENTER>;' \
+      --replace-fail 'linux,code = <BTN_TR>;'         'linux,code = <KEY_TAB>;' \
+      --replace-fail 'linux,code = <BTN_TL2>;'        'linux,code = <KEY_PAGEUP>;' \
+      --replace-fail 'linux,code = <BTN_TR2>;'        'linux,code = <KEY_PAGEDOWN>;'
+  '';
+
+  # linuxManualConfig oldconfig runs against unpatched source and strips
+  # symbols added by our patches. Re-inject after configure, before build.
+  postConfigure = (old.postConfigure or "") + ''
+    cp -L $buildRoot/.config $buildRoot/.config.tmp
+    rm $buildRoot/.config
+    mv $buildRoot/.config.tmp $buildRoot/.config
+    chmod +w $buildRoot/.config
+    # adc-keys defines joypad_input_g and must be built-in to be visible to
+    # the built-in rocknix-singleadc-joypad driver.
+    sed -i 's/^CONFIG_KEYBOARD_ADC=m$/CONFIG_KEYBOARD_ADC=y/' $buildRoot/.config
+    echo CONFIG_INPUT_POLLDEV=y >> $buildRoot/.config
+    echo CONFIG_KEYBOARD_ADC=y >> $buildRoot/.config
+    echo CONFIG_ROCKNIX_SINGLEADC_JOYPAD=y >> $buildRoot/.config
+    make "''${makeFlags[@]}" olddefconfig
+  '';
+})
