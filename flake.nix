@@ -10,22 +10,34 @@
     pkgs-arm = import nixpkgs { system = "aarch64-linux"; };
     pkgs-x86 = import nixpkgs { system = "x86_64-linux"; config.allowUnfree = true; };
 
-    # U-Boot compilation (aarch64)
     ubootDrv = pkgs-arm.callPackage ./nixos/uboot.nix {
       inherit (pkgs-arm) buildUBoot armTrustedFirmwareRK3399;
     };
 
-    # Bootloader assembly with rkbin tools (x86_64)
     uboot = pkgs-x86.callPackage ./nixos/uboot-rockchip.nix {
       inherit (pkgs-x86) rkbin;
       inherit ubootDrv;
     };
   in {
+    nixosModules = {
+      hardware = ./nixos/hardware.nix;
+      sd-image = ./nixos/sd-image.nix;
+      defaults = ./nixos/defaults.nix;
+      default = {
+        imports = [
+          self.nixosModules.hardware
+          self.nixosModules.defaults
+        ];
+      };
+    };
+
     nixosConfigurations.rg552-sdimage = nixpkgs.lib.nixosSystem {
       system = "aarch64-linux";
       specialArgs = { inherit uboot; };
       modules = [
-        ./nixos/configuration.nix
+        self.nixosModules.hardware
+        self.nixosModules.sd-image
+        self.nixosModules.defaults
       ];
     };
 
