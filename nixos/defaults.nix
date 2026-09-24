@@ -7,7 +7,7 @@
   networking.firewall.enable = lib.mkDefault false;
 
   systemd.services."serial-getty@ttyS2" = {
-    enable = true;
+    enable = lib.mkDefault true;
     wantedBy = [ "getty.target" ];
   };
 
@@ -23,8 +23,6 @@
   users.users.root.initialPassword = lib.mkDefault "nixos";
 
   environment.systemPackages = with pkgs; [
-    vim
-    htop
     vim
     htop
     file

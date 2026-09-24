@@ -63,9 +63,4 @@ in
     MatchProduct "Goodix"
     Option "TransformationMatrix" "0 -1 1 1 0 0 0 0 1"
   ''];
-
-  systemd.services."serial-getty@ttyS2" = {
-    enable = true;
-    wantedBy = [ "getty.target" ];
-  };
 }
