@@ -22,9 +22,7 @@ stdenv.mkDerivation {
     cp ${rkbin}/bin/rk33/rk3399_ddr_933MHz_v1.30.bin ddr.bin
     cp ${rkbin}/bin/rk33/rk3399_miniloader_v1.30.bin miniloader.bin
 
-    # 1. idbloader.img (DDR init + miniloader)
-    ${run}/mkimage -n rk3399 -T rksd -d ddr.bin idbloader.img
-    cat miniloader.bin >> idbloader.img
+    ${run}/mkimage -n rk3399 -T rksd -d ddr.bin:miniloader.bin -C bzip2 idbloader.img
 
     # 2. uboot.img (U-Boot packed in Rockchip format)
     ${run}/loaderimage --pack --uboot ${ubootDrv}/u-boot-dtb.bin uboot.img 0x00200000
